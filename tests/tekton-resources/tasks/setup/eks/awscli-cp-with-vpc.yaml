@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: awscli-eks-cluster-create-with-vpc-stack
+  name: awscli-eks-cluster-create-with-vpc-stack-experiment4
   namespace: scalability
 spec:
   description: |
@@ -39,8 +39,11 @@ spec:
       value: /config/kubeconfig
   steps:
   - name: create-eks
-    image: alpine/k8s:1.23.7
+    image: alpine/k8s:1.30.2
     script: |
+      aws s3 cp s3://kit-eks-perflab/assets/EksAdm-gavin ./eksadm
+      chmod 777 eksadm
+
       ENDPOINT_FLAG=""
       if [ -n "$(params.endpoint)" ]; then
         ENDPOINT_FLAG="--endpoint $(params.endpoint)"
@@ -58,7 +61,16 @@ spec:
       echo "securitygroup=$sg"
 
       if [ "$CREATED_CLUSTER" == "" ]; then
-        aws eks create-cluster --name $(params.cluster-name) --region $(params.region) --kubernetes-version $(params.kubernetes-version) --role-arn $SERVICE_ROLE_ARN --resources-vpc-config subnetIds=$subnets,securityGroupIds=$sg $ENDPOINT_FLAG
+        ./eksadm createCluster $ENDPOINT_FLAG \
+          --master-bundle-name bundle-custom-titan \
+          --etcd-bundle-name bundle-custom-titan \
+          --desired-master-asg-size 6 \
+          --dataplane-configuration eyJtaWdyYXRpb25UYXJnZXRFdGNkIjogImpvdXJuYWwifQ== \
+          --manifest-id 7ab0db2a0a2f9b71f969339f1fdff82ee6fbd7daf94343e766376c72645a7c4d \
+          --kubernetes-version $(params.kubernetes-version) --region $(params.region) \
+          --cluster-name $(params.cluster-name) \
+          --role-arn $SERVICE_ROLE_ARN --subnet-ids $subnets --security-group-ids $sg
+        #aws eks create-cluster --name $(params.cluster-name) --region $(params.region) --kubernetes-version $(params.kubernetes-version) --role-arn $SERVICE_ROLE_ARN --resources-vpc-config subnetIds=$subnets,securityGroupIds=$sg $ENDPOINT_FLAG
       fi
       aws eks $ENDPOINT_FLAG --region $(params.region) wait cluster-active --name $(params.cluster-name)
   - name: write-kubeconfig

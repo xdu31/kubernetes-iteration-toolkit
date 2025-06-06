@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: load-pod-identity
+  name: load-pod-identity-experiment4
   namespace: scalability
 spec:
   description: "clusterloader2 task to run various types of cl2 tests on a given cluster."
@@ -56,9 +56,9 @@ spec:
     default: "1"
     description: "The number of namespaces for EKS Pod Identity test"
   - name: pia-test-config-url
-    default: "https://raw.githubusercontent.com/awslabs/kubernetes-iteration-toolkit/main/tests/assets/eks-pod-identity/config.yaml"
+    default: "https://raw.githubusercontent.com/xdu31/kubernetes-iteration-toolkit/pia-pod-spec/tests/assets/eks-pod-identity/config.yaml"
   - name: pia-test-pod-spec-url
-    default: "https://raw.githubusercontent.com/awslabs/kubernetes-iteration-toolkit/main/tests/assets/eks-pod-identity/pod-default.yaml"
+    default: "https://raw.githubusercontent.com/xdu31/kubernetes-iteration-toolkit/pia-pod-spec/tests/assets/eks-pod-identity/pod-default.yaml"
   - name: timeout-pia-pod-creation
     default: "20m"
   - name: timeout-pia-pod-startup
@@ -162,6 +162,16 @@ spec:
     onError: continue
     script: |
       #!/bin/bash
+
+      FILE="s3://kit-eks-perflab/assets/$(params.cluster-name)"
+
+      echo "Waiting for file to appear: $FILE"
+
+      while ! aws s3 ls "$FILE" > /dev/null 2>&1; do
+          echo "File not found yet, waiting..."
+          sleep 20  # Wait 5 seconds before checking again
+      done
+
       if [ -n "$(params.amp-workspace-id)" ]; then
         export ENABLE_PROMETHEUS_SERVER=true
         export PROMETHEUS_PVC_STORAGE_CLASS=gp2

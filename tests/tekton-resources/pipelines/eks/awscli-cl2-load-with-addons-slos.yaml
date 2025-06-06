@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: awscli-eks-cl2loadtest-with-addons-slos
+  name: awscli-eks-cl2loadtest-with-addons-slos-experiment4
   namespace: scalability
 spec:
   finally:
@@ -26,7 +26,7 @@ spec:
     retries: 10
     taskRef:
       kind: Task
-      name: awscli-eks-cluster-teardown
+      name: awscli-eks-cluster-teardown-experiment4
   params:
   - name: cluster-name
     type: string
@@ -70,12 +70,12 @@ spec:
     default: "1"
     description: "The number of namespaces for EKS Pod Identity test."
   - name: pia-trust-policy-url
-    default: "https://raw.githubusercontent.com/awslabs/kubernetes-iteration-toolkit/main/tests/assets/eks-pod-identity/pia-trust-policy.json"
+    default: "https://raw.githubusercontent.com/xdu31/kubernetes-iteration-toolkit/pia-pod-spec/tests/assets/eks-pod-identity/pia-trust-policy.json"
     type: string
   - name: pia-test-config-url
-    default: "https://raw.githubusercontent.com/awslabs/kubernetes-iteration-toolkit/main/tests/assets/eks-pod-identity/config.yaml"
+    default: "https://raw.githubusercontent.com/xdu31/kubernetes-iteration-toolkit/pia-pod-spec/tests/assets/eks-pod-identity/config.yaml"
   - name: pia-test-pod-spec-url
-    default: "https://raw.githubusercontent.com/awslabs/kubernetes-iteration-toolkit/main/tests/assets/eks-pod-identity/pod-default.yaml"
+    default: "https://raw.githubusercontent.com/xdu31/kubernetes-iteration-toolkit/pia-pod-spec/tests/assets/eks-pod-identity/pod-default.yaml"
   - name: cl2-eks-pod-identity-pods
     default: "5000"
   - name: cl2-default-qps
@@ -172,7 +172,7 @@ spec:
     - awscli-vpc-create
     taskRef:
       kind: Task
-      name: awscli-eks-cluster-create-with-vpc-stack
+      name: awscli-eks-cluster-create-with-vpc-stack-experiment4
     workspaces:
     - name: config
       workspace: config
@@ -289,7 +289,7 @@ spec:
     - create-mng-nodes
     taskRef:
       kind: Task
-      name:  awscli-eks-pia-create
+      name:  awscli-eks-pia-create-experiment4
     workspaces:
     - name: config
       workspace: config
@@ -337,35 +337,7 @@ spec:
     - create-pod-identity-association
     taskRef:
       kind: Task
-      name: load-pod-identity
-    workspaces:
-    - name: source
-      workspace: source
-    - name: results
-      workspace: results
-    - name: config
-      workspace: config
-  - name: generate
-    params:
-    - name: cluster-name
-      value: $(params.cluster-name)
-    - name: pods-per-node
-      value: $(params.pods-per-node)
-    - name: nodes-per-namespace
-      value: $(params.nodes-per-namespace)
-    - name: cl2-load-test-throughput
-      value: $(params.cl2-load-test-throughput)
-    - name: results-bucket
-      value: $(params.results-bucket)
-    - name: nodes
-      value: $(params.desired-nodes)
-    - name: amp-workspace-id
-      value: $(params.amp-workspace-id)
-    runAfter:
-    - generate-eks-pod-identity
-    taskRef:
-      kind: Task
-      name: load-slos
+      name: load-pod-identity-experiment4
     workspaces:
     - name: source
       workspace: source
@@ -383,19 +355,6 @@ spec:
       value: eks-pod-identity-$(params.kubernetes-version)
     runAfter:
     - generate-eks-pod-identity
-    taskRef:
-      kind: Task
-      name: cloudwatch
-  - name: cw-metrics
-    params:
-    - name: dimensions
-      value: $(params.desired-nodes)
-    - name: value
-      value: $(tasks.generate.results.datapoint)
-    - name: namespace
-      value: $(params.kubernetes-version)
-    runAfter:
-    - generate
     taskRef:
       kind: Task
       name: cloudwatch
