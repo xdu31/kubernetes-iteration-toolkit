@@ -20,6 +20,13 @@ spec:
         value: "{{.MetricLatencyName}}"
       - name: PERIOD
         value: "{{.MetricPeriod}}"
+    resources:
+      requests:
+        cpu: "120m"
+        memory: "2.5Mi"
+      limits:
+        cpu: "150m"
+        memory: "3Mi"
     command:
       - sh
       - -c
